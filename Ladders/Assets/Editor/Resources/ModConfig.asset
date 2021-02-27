@@ -19,4 +19,4 @@ MonoBehaviour:
     on ktane.timwi.de\r\n"
   version: 1.0.0
   outputFolder: build
-  previewImage: {fileID: 0}
+  previewImage: {fileID: 2800000, guid: 5524ced06e1198b49bed96a84396a2d8, type: 3}

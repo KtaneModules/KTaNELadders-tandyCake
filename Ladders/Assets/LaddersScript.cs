@@ -92,6 +92,7 @@ public class LaddersScript : MonoBehaviour {
     List<int> pressedOrder = new List<int>();
 
     int tpCounter = 0;
+    string possibleLetters = string.Empty;
 
     void Awake () {
         moduleId = moduleIdCounter++;
@@ -119,7 +120,6 @@ public class LaddersScript : MonoBehaviour {
         }
 
     }
-
     void Start ()
     {
         GetArmColors();
@@ -136,9 +136,15 @@ public class LaddersScript : MonoBehaviour {
     }
     void Submit()
     {
+        //Debug.Log(stage);
         submitButton.AddInteractionPunch(1f);
         Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, transform);
+        if (moduleSolved)
+        {
+            return;
+        }
         if (stage == 0)
+        //if (true)
         {
             StartCoroutine(StageProgress(stage));
         }
@@ -147,28 +153,25 @@ public class LaddersScript : MonoBehaviour {
             bool invalid = false;
             if (stage == 3)
             {
-                Debug.Log(pressedOrder.Join());
                 for (int i = 0; i < 7; i++)
                 {
-                    if (pressedOrder[i] != correctOrder[i])
+                    if (pressedOrder.Count() == 7)
+                    {
+                        if (pressedOrder[i] != correctOrder[i])
+                        {
+                            invalid = true;
+                            //Debug.Log(pressedOrder.Join());
+                            //Debug.Log(correctOrder.Join());
+                        }
+                    }
+                    if (pressedOrder.Count() != 7)
                     {
                         invalid = true;
                     }
                 }
             }
-            else
+            if (ArrayEquals(allLadderStatuses[stage - 1], correctStatuses[stage - 1]) && !invalid)
             {
-                for (int i = 0; i < allLadderStatuses[stage - 1].Length; i++)
-                {
-                    if (allLadderStatuses[stage - 1][i] != correctStatuses[stage - 1][i])
-                    {
-                        invalid = true;
-                    }
-                }
-            }
-            if (!invalid)
-            {
-                invalid = false;
                 Debug.LogFormat("[Ladders #{0}] You pressed submit. That was correct.", moduleId);
                 StartCoroutine(StageProgress(stage));
             }
@@ -176,6 +179,8 @@ public class LaddersScript : MonoBehaviour {
             {
                 Debug.LogFormat("[Ladders #{0}] You pressed submit. That was incorrect, stage reset.", moduleId);
                 GetComponent<KMBombModule>().HandleStrike();
+                invalid = false;
+                pressedOrder.Clear();
                 StartCoroutine(Reset());
             }
         }
@@ -215,7 +220,6 @@ public class LaddersScript : MonoBehaviour {
         allSolid[ladderIndex][pressedIndex].SetActive(false);
         allBroke[ladderIndex][pressedIndex].SetActive(true);
         allLadderStatuses[ladderIndex][pressedIndex] = true;
-        allSelectables[ladderIndex][pressedIndex].AddInteractionPunch(0.05f);
         Audio.PlaySoundAtTransform("target", transform);
     }
 
@@ -375,6 +379,7 @@ public class LaddersScript : MonoBehaviour {
             for (int i = 0; i < 7; i++)
             {
                 ladderColors[2][i] = colors[i];
+                correctStatuses[2][i] = true;
             }
             missingColor = colors[7];
             SNIndex = Array.IndexOf(alphabet, Bomb.GetSerialNumber()[3]);
@@ -404,23 +409,24 @@ public class LaddersScript : MonoBehaviour {
         {
             ladderColors[0][i] = UnityEngine.Random.Range(0, 8);
         }
+        int cnt = 0;
         for (int i = 0; i < 8; i++)
         {
             int[] threeAdj = new int[] { ladderColors[0][i % 8], ladderColors[0][(i + 1) % 8], ladderColors[0][(i + 2) % 8], };
+            int[] threeAdjRev = new int[] { threeAdj[2], threeAdj[1], threeAdj[0] };
 
-            int cnt = 0;
             foreach (int[] possibleCombination in stage1Intersections)
             {
                 
-                if (((threeAdj[0] == possibleCombination[0]) && (threeAdj[1] == possibleCombination[1]) && (threeAdj[2] == possibleCombination[2])) || ((threeAdj[2] == possibleCombination[0]) && (threeAdj[1] == possibleCombination[1]) && (threeAdj[0] == possibleCombination[2])))
+                if (ArrayEquals(possibleCombination, threeAdj) || ArrayEquals(possibleCombination, threeAdjRev))
                 {
                     cnt++;
                 }
             }
-            if (cnt > 1)
-            {
-                GenStage1Ladders();
-            }
+        }
+        if (cnt != 1)
+        {
+            GenStage1Ladders();
         }
     }
 
@@ -452,6 +458,45 @@ public class LaddersScript : MonoBehaviour {
         }
         return output;
     }
+    bool ArrayEquals(int[] array1, int[] array2)
+    {
+        if (array1.Length != array2.Length)
+        {
+            return false;
+        }
+        else
+        {
+            bool match = true;
+            for (int i = 0; i < array1.Length; i++)
+            {
+                if (array1[i] != array2[i])
+                {
+                    match = false;
+                }
+            }
+            return match;
+        }
+    }
+    bool ArrayEquals(bool[] array1, bool[] array2)
+    {
+        if (array1.Length != array2.Length)
+        {
+            return false;
+        }
+        else
+        {
+            bool match = true;
+            for (int i = 0; i < array1.Length; i++)
+            {
+                if (array1[i] != array2[i])
+                {
+                    match = false;
+                }
+            }
+            return match;
+        }
+    }
+
     string arrayToColors(int[] array)
     {
         string template = string.Empty;
@@ -496,9 +541,7 @@ public class LaddersScript : MonoBehaviour {
             GetComponent<KMBombModule>().HandlePass();
             moduleSolved = true;
             isResetting = true;
-            float elapsed = 0f;
-            float duration = 1.2f;
-            while (elapsed < duration)
+            while (topShutter.transform.localScale.x > -0.0065)
             {
                 Vector3 topPos = topShutter.transform.localPosition;
                 Vector3 bottomPos = bottomShutter.transform.localPosition;
@@ -509,7 +552,6 @@ public class LaddersScript : MonoBehaviour {
                 topShutter.transform.localScale = new Vector3(topScl.x - 0.0001f, topScl.y, topScl.z);
                 bottomShutter.transform.localScale = new Vector3(bottomScl.x + 0.0001f, bottomScl.y, bottomScl.z);
                 yield return null;
-                elapsed += Time.deltaTime;
             }
             StopAllCoroutines();    
         }
@@ -520,16 +562,12 @@ public class LaddersScript : MonoBehaviour {
             GenerateStage(stage);
             stage++;
             GameObject arm = ladderArms[ladderToMove];
-            float elapsed = 0f;
-            float duration = 3.75f;
-            while (elapsed < duration)
+            while (arm.transform.localScale.y < 22)
             {
                 Transform ladTran = arm.transform;
-
                 ladTran.localPosition = new Vector3(ladTran.localPosition.x, -0.075f + ladTran.localPosition.y, ladTran.localPosition.z);
                 ladTran.localScale = new Vector3(ladTran.localScale.x, 0.1f + ladTran.localScale.y, ladTran.localScale.z);
                 yield return null;
-                elapsed += Time.deltaTime;
             }
             yield return null;
         }
@@ -537,9 +575,7 @@ public class LaddersScript : MonoBehaviour {
     IEnumerator RungsMove(int inputNum, int stageNum)
     {
         yield return new WaitForSecondsRealtime(0.5f);
-        float elapsed = 0f;
-        const float duration = 0.1f;
-        while (elapsed < duration)
+        while (allRungs[stageNum][inputNum % allRungs[stageNum].Length].transform.localPosition.y > -1.5f)
         { 
             Transform movedRung = allRungs[stageNum][inputNum % allRungs[stageNum].Length].transform;
             float x = movedRung.localPosition.x;
@@ -548,12 +584,9 @@ public class LaddersScript : MonoBehaviour {
 
             movedRung.localPosition = new Vector3(x, y - 0.15f, z);
             yield return null;
-            elapsed += Time.deltaTime;
         }
         StartCoroutine(RungsMove(inputNum + 1, stageNum));
-        elapsed = 0f;
-        float duration2 = 3.6f;
-        while (elapsed < duration2)
+        while (allRungs[stageNum][inputNum % allRungs[stageNum].Length].transform.localPosition.y > -33)
         { 
             Transform movedRung = allRungs[stageNum][inputNum % allRungs[stageNum].Length].transform;
             float x = movedRung.localPosition.x;
@@ -562,7 +595,6 @@ public class LaddersScript : MonoBehaviour {
 
             movedRung.localPosition = new Vector3(x, y - 0.15f, z);
             yield return null;
-            elapsed += Time.deltaTime;
         }
         allRungs[stageNum][inputNum % allRungs[stageNum].Length].transform.localPosition = new Vector3(0.25f, 0f, -0.75f);
 
@@ -574,9 +606,7 @@ public class LaddersScript : MonoBehaviour {
             yield break;
         }
         isResetting = true;
-        float elapsed = 0f;
-        float duration = 1.1f;
-        while (elapsed < duration)
+        while (topShutter.transform.localScale.x > -0.0065f)
         {
             Vector3 topPos = topShutter.transform.localPosition;
             Vector3 bottomPos = bottomShutter.transform.localPosition;
@@ -587,7 +617,6 @@ public class LaddersScript : MonoBehaviour {
             topShutter.transform.localScale = new Vector3(topScl.x - 0.0001f, topScl.y, topScl.z );
             bottomShutter.transform.localScale = new Vector3(bottomScl.x + 0.0001f, bottomScl.y, bottomScl.z);
             yield return null;
-            elapsed += Time.deltaTime;
         }
         for (int i = 0; i < allLadderStatuses[stage - 1].Length; i++)
         {
@@ -597,9 +626,8 @@ public class LaddersScript : MonoBehaviour {
             pressedOrder.Clear();
 
         }
-        elapsed = 0f;
         yield return new WaitForSecondsRealtime(0.5f);
-        while (elapsed < duration)
+        while (topShutter.transform.localScale.x < 0.0001f)
         {
             Vector3 topPos = topShutter.transform.localPosition;
             Vector3 bottomPos = bottomShutter.transform.localPosition;
@@ -610,7 +638,6 @@ public class LaddersScript : MonoBehaviour {
             topShutter.transform.localScale = new Vector3(topScl.x + 0.0001f, topScl.y, topScl.z);
             bottomShutter.transform.localScale = new Vector3(bottomScl.x - 0.0001f, bottomScl.y, bottomScl.z);
             yield return null;
-            elapsed += Time.deltaTime;
         }
         isResetting = false;
         yield return null;
@@ -619,7 +646,7 @@ public class LaddersScript : MonoBehaviour {
     #pragma warning disable 414
     private readonly string TwitchHelpMessage = @"Use <!{0} submit> to press the submit button. Use <!{0} break A B C> to break the rungs labelled A, B, and C.";
     #pragma warning restore 414
-
+    
     IEnumerator ProcessTwitchCommand (string Command)
     {
         string[] parameters = Command.Trim().ToUpperInvariant().Split(' ');
@@ -632,14 +659,13 @@ public class LaddersScript : MonoBehaviour {
         }
         else if ((parameters.Length > 1) && (parameters[0] == "BREAK"))
         {
-            string possibleLetters = string.Empty;
             List<string> rungsToBreak = new List<string>();
             switch (stage)
             {
                 case 0: yield return "sendtochaterror You can't break any ladders yet you silly goose!"; break;
-                case 1: possibleLetters += " ABCDEFGH"; break;
-                case 2: possibleLetters += " IJKLMNOPQ"; break;
-                case 3: possibleLetters += " RSTUVWX"; break;
+                case 1: possibleLetters = " ABCDEFGH"; break;
+                case 2: possibleLetters = " ABCDEFGHIJKLMNOPQ"; break;
+                case 3: possibleLetters = " ABCDEFGHIJKLMNOPQRSTUVWX"; break;
             }
             for (int i = 1; i < parameters.Length; i++)
             {
@@ -660,8 +686,11 @@ public class LaddersScript : MonoBehaviour {
                         {
                             if (rung.GetComponentInChildren<TextMesh>().text == letter)
                             {
-                                rung.GetComponentInChildren<KMSelectable>().OnInteract();
-                                yield return new WaitForSecondsRealtime(0.2f);
+                                if (!allLadderStatuses[Array.IndexOf(allRungs, array)][Array.IndexOf(array, rung)])
+                                {
+                                    rung.GetComponentInChildren<KMSelectable>().OnInteract();
+                                    yield return new WaitForSecondsRealtime(0.2f);
+                                }
                             }
                         }
                     }
