@@ -368,8 +368,8 @@ public class LaddersScript : MonoBehaviour {
             int cycleNum = UnityEngine.Random.Range(0, 9);
             CycleRight(ladderColors[1], cycleNum);
             CycleRight(correctStatuses[1], cycleNum);
-            Debug.LogFormat("[Ladders #{0}] The displayed sequence of colors is {1}.", moduleId, arrayToColors(ladderColors[1]));
             SetRungColors(1, ladderColors[1]);
+            Debug.LogFormat("[Ladders #{0}] The displayed sequence of colors is {1}.", moduleId, arrayToColors(ladderColors[1]));
         }
         else if (stage == 2) //All code for stage 3 :)
         {
@@ -700,11 +700,45 @@ public class LaddersScript : MonoBehaviour {
     }
     IEnumerator TwitchHandleForcedSolve()
     {
-        if (!moduleSolved)
+        if (stage == 0)
         {
-            stage = 3;
-            StartCoroutine(StageProgress(0));
-            yield return null;
+            submitButton.OnInteract();
+            yield return true;
+        }
+        while (!moduleSolved)
+        {
+            switch (stage)
+            {
+                case 1: case 2:
+                    int cnt = 0;
+                    foreach (KMSelectable rung in allSelectables[stage - 1])
+                    {
+                        if (correctStatuses[stage - 1][cnt] && !allLadderStatuses[stage - 1][cnt])
+                        {
+                            rung.OnInteract();
+                            yield return new WaitForSeconds(0.2f);
+                        }
+                        cnt++;
+                    }
+                    break;
+                case 3:
+                    if (pressedOrder.Count > 0) { StartCoroutine(Reset()); yield return new WaitForSeconds(3); }
+                    for (int i = 0; i < 7; i++)
+                    {
+                        if (!allLadderStatuses[2][Array.IndexOf(ladderColors[2], correctOrder[i])])
+                        {
+                            allSelectables[2][Array.IndexOf(ladderColors[2], correctOrder[i])].OnInteract();
+                            yield return new WaitForSeconds(0.2f);
+                        }
+                    }
+                    break;
+            }
+            if (correctStatuses[stage - 1].SequenceEqual(allLadderStatuses[stage - 1]))
+            {
+                submitButton.OnInteract();
+            }
+            else { StartCoroutine(Reset()); yield return new WaitForSeconds(3); }
+            yield return true;
         }
     }
 }
