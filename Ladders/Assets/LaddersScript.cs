@@ -373,7 +373,7 @@ public class LaddersScript : MonoBehaviour {
             Transform arm = ladderArms[ladderToMove].transform;
             while (arm.localScale.y < 21)
             {
-                arm.localPosition -= new Vector3(0, 4 * Time.deltaTime, 0);
+                arm.localPosition -= new Vector3(0, 4f * Time.deltaTime, 0);
                 arm.localScale -= new Vector3(0, 5.33f* Time.deltaTime, 0);
                 yield return null;
             }
