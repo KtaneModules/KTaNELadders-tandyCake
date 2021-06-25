@@ -353,6 +353,7 @@ public class LaddersScript : MonoBehaviour {
         if (stage == 3)
         {
             GetComponent<KMBombModule>().HandlePass();
+            Audio.PlaySoundAtTransform("solve", transform);
             moduleSolved = true;
             isResetting = true;
             while (topShutter.transform.localScale.x < 0.007)
@@ -371,10 +372,9 @@ public class LaddersScript : MonoBehaviour {
             GenerateStage(stage);
             stage++;
             Transform arm = ladderArms[ladderToMove].transform;
-            while (arm.localScale.y < 21)
+            while (arm.localScale.y < 22)
             {
-                arm.localPosition -= new Vector3(0, 4f * Time.deltaTime, 0);
-                arm.localScale -= new Vector3(0, 5.33f* Time.deltaTime, 0);
+                arm.localScale += new Vector3(0, 5.33f* Time.deltaTime, 0);
                 yield return null;
             }
             yield return null;
@@ -488,14 +488,7 @@ public class LaddersScript : MonoBehaviour {
                                 {
                                     rung.GetComponentInChildren<KMSelectable>().OnInteract();
                                     yield return new WaitForSecondsRealtime(0.2f);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+                                }}}}/* :) */}}}} 
     IEnumerator TwitchHandleForcedSolve()
     {
         if (stage == 0)
@@ -531,7 +524,7 @@ public class LaddersScript : MonoBehaviour {
                     }
                     break;
             }
-            if (correctStatuses[stage - 1].SequenceEqual(allLadderStatuses[stage - 1]))
+            if (pressedOrder.SequenceEqual(correctOrder))
             {
                 submitButton.OnInteract();
             }
