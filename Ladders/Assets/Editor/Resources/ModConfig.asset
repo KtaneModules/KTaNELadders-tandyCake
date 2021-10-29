@@ -17,6 +17,6 @@ MonoBehaviour:
   description: "I wonder what is at the tops of these ladders.\n\nModule Created by
     Danny7007\r\nManual Created by Vincology\nmoduleID: ladders\nManual can be found
     on ktane.timwi.de\r\n"
-  version: 1.0.0
+  version: 2.1.1
   outputFolder: build
   previewImage: {fileID: 2800000, guid: 5524ced06e1198b49bed96a84396a2d8, type: 3}
